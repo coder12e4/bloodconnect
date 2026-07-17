@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "415455706258",
+    "project_id": "bloodconnectkerala",
+    "storage_bucket": "bloodconnectkerala.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:415455706258:android:2f5c545ac973357d4b3a4b",
+        "android_client_info": {
+          "package_name": "com.zeohm.bloodconnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrGRp0vVEBxm_XC6AR-zLw9Jgl6r3c-2E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
