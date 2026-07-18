@@ -15,7 +15,13 @@ class SettingsScreen extends StatelessWidget {
     final controller = Get.put(SettingsController());
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Settings")),
+      appBar: AppBar(
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(25),
+            ),),
+          title: const Text("Settings")),
+
       body: ListView(
         children: [
           Obx(

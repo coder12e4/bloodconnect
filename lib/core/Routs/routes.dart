@@ -27,7 +27,7 @@ class AppRoutes{
   static List<GetPage> appPages = <GetPage>[
     GetPage(
       name: AppRoutes.Initial,
-      page: () => const splash(),
+      page: () => const Splash(),
       binding: SplashBinding(),
     ),
     GetPage(

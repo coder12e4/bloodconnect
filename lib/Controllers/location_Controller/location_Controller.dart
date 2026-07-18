@@ -22,6 +22,8 @@ class LocationController extends GetxService {
   final RxBool isUpdating = false.obs;
   final Rx<Position?> lastPosition = Rx<Position?>(null);
   final RxString lastError = "".obs;
+  RxDouble lat=00.00.obs;
+  RxDouble long=00.00.obs;
 
  late String _uid ;
 
@@ -29,6 +31,22 @@ class LocationController extends GetxService {
   /// point of view — it won't block whatever triggered it, and swallows
   /// errors internally (logged via lastError) so a failed GPS/network read
   /// never crashes the calling flow.
+
+  void getPosition()async{
+    final hasPermission = await _ensurePermission();
+    if (!hasPermission) {
+      lastError.value = "Location permission denied";
+    }
+
+    final position = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+
+     lat=position.latitude.obs;
+     long=position.longitude.obs;
+
+    lastPosition.value = position;
+  }
   void updateCurrentLocationInBackground() {
     // Deliberately not awaited by design — runs in the background relative
     // to the caller. Call `await updateCurrentLocation()` directly instead
@@ -61,8 +79,8 @@ class LocationController extends GetxService {
       lastPosition.value = position;
 
       await FirebaseFirestore.instance.collection("users").doc(_uid).update({
-        "currentlat": position.latitude,
-        "currentlong": position.longitude,
+        "latitude": position.latitude,
+        "longitude": position.longitude,
         "updatedAt": FieldValue.serverTimestamp(),
       });
 

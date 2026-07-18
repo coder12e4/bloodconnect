@@ -24,6 +24,11 @@ class _DonorRegistrationPageState extends State<DonorRegistrationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(25),
+          ),),
         title: const Text("Blood Donor Registration"),
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
@@ -36,9 +41,29 @@ class _DonorRegistrationPageState extends State<DonorRegistrationPage> {
             children: [
 
               /// Name
+              ///
+              ///
+              ///
+              ///
+
+              Obx(() {
+                return GestureDetector(
+                  onTap: controller.uploadImage,
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundImage: controller.selectedImage.value != null
+                        ? FileImage(controller.selectedImage.value!)
+                        : null,
+                    child: controller.selectedImage.value == null
+                        ? const Icon(Icons.camera_alt, size: 40)
+                        : null,
+                  ),
+                );
+              }),
+              const SizedBox(height: 15),
               TextFormField(
                 controller: controller.nameController,
-
+                decoration: InputDecoration(hintText: "Enter Your Name"),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return "Enter your name";
@@ -53,6 +78,7 @@ class _DonorRegistrationPageState extends State<DonorRegistrationPage> {
               TextFormField(
                 controller: controller.emailController,
                 keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(hintText: "Enter Your Email"),
 
               ),
 
@@ -62,6 +88,7 @@ class _DonorRegistrationPageState extends State<DonorRegistrationPage> {
               TextFormField(
                 controller: controller.phoneController,
                 keyboardType: TextInputType.phone,
+                decoration: InputDecoration(hintText: "Enter Your Phone Number"),
 
               ),
 
@@ -69,6 +96,7 @@ class _DonorRegistrationPageState extends State<DonorRegistrationPage> {
 
               /// Gender
               Obx(() => DropdownButtonFormField<String>(
+                hint: Text("Gender"),
                 value: controller.gender.value,
 
                 items: controller.genders
@@ -86,6 +114,7 @@ class _DonorRegistrationPageState extends State<DonorRegistrationPage> {
 
               /// Blood Group
               Obx(() => DropdownButtonFormField<String>(
+                hint: Text("Blood Group"),
                 value: controller.bloodGroup.value,
 
                 items: controller.bloodGroups
@@ -105,6 +134,7 @@ class _DonorRegistrationPageState extends State<DonorRegistrationPage> {
               TextFormField(
                 controller: controller.ageController,
                 keyboardType: TextInputType.number,
+                decoration: InputDecoration(hintText: "Enter Your Age"),
 
               ),
 
@@ -114,54 +144,40 @@ class _DonorRegistrationPageState extends State<DonorRegistrationPage> {
               TextFormField(
                 controller: controller.weightController,
                 keyboardType: TextInputType.number,
+                decoration: InputDecoration(hintText: "Enter Your Weight"),
 
               ),
 
               const SizedBox(height: 15),
 
               /// District
-              TextFormField(
-                controller: controller.districtController,
-                decoration: const InputDecoration(
-                  labelText: "District",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.location_city),
-                ),
-              ),
+
+
+              Obx(() => DropdownButtonFormField<String>(
+                hint: Text("Blood Group"),
+                value: controller.district.value,
+
+                items: controller.keralaDistricts
+                    .map((e) => DropdownMenuItem(
+                  value: e,
+                  child: Text(e),
+                ))
+                    .toList(),
+                onChanged: (value) {
+                  controller.district.value = value!;
+                },
+              )),
+
 
               const SizedBox(height: 15),
 
               /// Place
               TextFormField(
                 controller: controller.placeController,
+                decoration: InputDecoration(hintText: "Enter Your Place"),
 
               ),
 
-              const SizedBox(height: 15),
-
-              /// Latitude
-              TextFormField(
-                controller: controller.latitudeController,
-                keyboardType: TextInputType.number,
-
-              ),
-
-              const SizedBox(height: 15),
-
-              /// Longitude
-              TextFormField(
-                controller: controller.longitudeController,
-                keyboardType: TextInputType.number,
-
-              ),
-
-              const SizedBox(height: 15),
-
-              /// Profile Image
-              TextFormField(
-                controller: controller.profileImageController,
-                
-              ),
 
               const SizedBox(height: 20),
 
@@ -221,10 +237,12 @@ class _DonorRegistrationPageState extends State<DonorRegistrationPage> {
 
               /// Register Button
               Obx(() => SizedBox(
-                width: 100,
+                width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
+
                   style: ElevatedButton.styleFrom(
+
                     backgroundColor: Colors.red,
                   ),
                   onPressed: controller.isLoading.value
@@ -243,6 +261,11 @@ class _DonorRegistrationPageState extends State<DonorRegistrationPage> {
                   ),
                 ),
               )),
+              const SizedBox(height: 20),
+              GestureDetector(onTap: (){
+                controller.moveTologin();
+              },child: Text("Already Registered? Go to login"))
+
             ],
           ),
         ),

@@ -30,8 +30,6 @@ class SplashController extends GetxController {
         Get.offAllNamed("/login");
       }
 
-
-      Get.offAllNamed(AppRoutes.Register);
     });
   }
 

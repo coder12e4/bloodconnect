@@ -1,11 +1,20 @@
+import 'dart:io';
+
+import 'package:bloodconnect/Controllers/location_Controller/location_Controller.dart';
+import 'package:bloodconnect/core/Routs/routes.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
+
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:get/get.dart';
 
 class RegisterController extends GetxController {
   final formKey = GlobalKey<FormState>();
-
+final location=Get.put( LocationController());
   // Text Controllers
   final nameController = TextEditingController();
   final emailController = TextEditingController();
@@ -17,10 +26,13 @@ class RegisterController extends GetxController {
   final latitudeController = TextEditingController();
   final longitudeController = TextEditingController();
   final profileImageController = TextEditingController();
+  late double lat;
+  late double long;
 
   // Observable Variables
   RxString gender = "Male".obs;
   RxString bloodGroup = "O+".obs;
+  RxString district="Malappuram".obs;
 
   RxBool isDonor = true.obs;
   RxBool isAvailable = true.obs;
@@ -47,6 +59,70 @@ class RegisterController extends GetxController {
     "O-",
   ];
 
+  final keralaDistricts = [
+
+    "Thiruvananthapuram",
+    "Kollam",
+    "Pathanamthitta",
+    "Alappuzha",
+    "Kottayam",
+    "Idukki",
+    "Ernakulam",
+    "Thrissur",
+    "Palakkad",
+    "Malappuram",
+    "Kozhikode",
+    "Wayanad",
+    "Kannur",
+    "Kasaragod",
+  ];
+
+  final picker = ImagePicker();
+
+  Rx<File?> selectedImage = Rx<File?>(null);
+
+  RxBool isUploading = false.obs;
+
+
+  final LocationController locationController=Get.put(LocationController());
+  @override
+  void onInit() {
+    location.getPosition();
+    lat=location.lat.value;
+    long=location.long.value;
+
+  }
+
+  Future<String?> uploadImage() async {
+    if (selectedImage.value == null) return null;
+
+    try {
+      isUploading.value = true;
+
+      String fileName =
+          "profile_images/${DateTime.now().millisecondsSinceEpoch}.jpg";
+
+      Reference reference =
+      FirebaseStorage.instance.ref().child(fileName);
+
+      UploadTask uploadTask =
+      reference.putFile(selectedImage.value!);
+
+      TaskSnapshot snapshot = await uploadTask;
+
+      String downloadUrl =
+      await snapshot.ref.getDownloadURL();
+
+      return downloadUrl;
+    } catch (e) {
+      Get.snackbar("Error", e.toString());
+      return null;
+    } finally {
+      isUploading.value = false;
+    }
+  }
+
+
   /// Pick Date
   Future<void> pickDate(BuildContext context) async {
     final picked = await showDatePicker(
@@ -61,13 +137,14 @@ class RegisterController extends GetxController {
     }
   }
 
+
+
+
+
   /// Register User
   Future<void> registerDonor() async {
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
 
-    isLoading.value = true;
+
 
     try {
       UserCredential credential =
@@ -77,24 +154,24 @@ class RegisterController extends GetxController {
       );
 
       await credential.user!.sendEmailVerification();
-
+      String? imageUrl = await uploadImage();
       await FirebaseFirestore.instance
           .collection("users")
           .doc(credential.user!.uid)
           .set({
         "uid": credential.user!.uid,
-        "name": "test",
+        "name": nameController.text,
         "email": emailController.text,
-        "phone": "1234567890",
+        "phone": phoneController.text,
         "bloodGroup": bloodGroup.value,
         "gender": gender.value,
-        "age": "00",
-        "weight": "00",
+        "age": ageController.text,
+        "weight": weightController.text,
         "district": "",
         "place": "",
-        "latitude": "",
-        "longitude": "",
-        "profileImage": "",
+        "latitude": lat,
+        "longitude": long,
+        "profileImage": imageUrl,
         "isAvailable": true,
         "lastDonationDate": null,
         "emergencyContact": "",
@@ -118,6 +195,7 @@ class RegisterController extends GetxController {
         "Success",
         "Registration Completed",
       );
+      Get.offAllNamed(AppRoutes.Register);
     } catch (e) {
       Get.snackbar(
         "Error",
@@ -145,5 +223,7 @@ class RegisterController extends GetxController {
     super.onClose();
   }
 
-
+void moveTologin(){
+    Get.toNamed(AppRoutes.Login);
+}
 }

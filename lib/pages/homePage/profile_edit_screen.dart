@@ -1,7 +1,9 @@
+import 'package:bloodconnect/Controllers/home_controller.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 class ProfileEditController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -23,15 +25,18 @@ class ProfileEditController extends GetxController {
     "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-",
   ];
 
-  String? get _uid => FirebaseAuth.instance.currentUser?.uid;
+  final  box=GetStorage();
+  late String _uid;
 
   @override
   void onInit() {
     super.onInit();
+    _uid=box.read("userId");
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
+
     if (_uid == null) return;
     isLoading.value = true;
     try {
@@ -77,6 +82,7 @@ class ProfileEditController extends GetxController {
       });
       Get.back();
       Get.snackbar("Success", "Profile updated");
+      Get.find<HomeController>().refreshDonors();
     } catch (e) {
       Get.snackbar("Error", e.toString());
     } finally {
@@ -104,7 +110,12 @@ class ProfileEditScreen extends StatelessWidget {
     final controller = Get.put(ProfileEditController());
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Edit Profile")),
+      appBar: AppBar(
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(25),
+            ),)
+      ,title: const Text("Edit Profile")),
       body: Obx(
         () => controller.isLoading.value
             ? const Center(child: CircularProgressIndicator())

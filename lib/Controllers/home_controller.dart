@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 
@@ -19,6 +21,10 @@ class DonorModel {
   final bool isAvailable;
   final String role;
 
+  /// Distance from the current user in kilometers.
+  /// Populated at runtime after fetching; not stored in Firestore.
+  double? distanceKm;
+
   DonorModel({
     required this.uid,
     required this.name,
@@ -33,6 +39,7 @@ class DonorModel {
     required this.profileImage,
     required this.isAvailable,
     required this.role,
+    this.distanceKm,
   });
 
   factory DonorModel.fromMap(Map<String, dynamic> map) {
@@ -78,19 +85,22 @@ class HomeController extends GetxController {
     "O+",
     "O-",
   ];
+
   final locationController = Get.put(LocationController(), permanent: true);
+
   @override
   void onInit() {
     super.onInit();
 
-
     locationController.updateCurrentLocationInBackground();
     fetchDonors();
 
+    // Re-sort automatically once the user's live location becomes available
+    // or updates. Adjust the property names below to match your
+    // LocationController's actual reactive fields.
+    ever(locationController.lat, (_) => _applyFilter());
+    ever(locationController.long, (_) => _applyFilter());
   }
-
-
-
 
   /// Fetch all donor users from Firestore.
   Future<void> fetchDonors() async {
@@ -102,7 +112,7 @@ class HomeController extends GetxController {
           .get();
 
       final donors =
-          snapshot.docs.map((doc) => DonorModel.fromMap(doc.data())).toList();
+      snapshot.docs.map((doc) => DonorModel.fromMap(doc.data())).toList();
 
       allDonors.assignAll(donors);
       _applyFilter();
@@ -121,16 +131,74 @@ class HomeController extends GetxController {
   }
 
   void _applyFilter() {
+    List<DonorModel> result;
+
     if (selectedBloodGroup.value == "All") {
-      filteredDonors.assignAll(allDonors);
+      result = List<DonorModel>.from(allDonors);
     } else {
-      filteredDonors.assignAll(
-        allDonors
-            .where((d) => d.bloodGroup == selectedBloodGroup.value)
-            .toList(),
-      );
+      result = allDonors
+          .where((d) => d.bloodGroup == selectedBloodGroup.value)
+          .toList();
     }
+
+    _sortByDistance(result);
+
+    filteredDonors.assignAll(result);
   }
+
+  /// Computes distanceKm for each donor relative to the current user
+  /// location, then sorts the list ascending (nearest first).
+  /// Donors with missing coordinates, or when the user's location isn't
+  /// available yet, are pushed to the end of the list.
+  void _sortByDistance(List<DonorModel> donors) {
+    final double? userLat = locationController.lat.value;
+    final double? userLng = locationController.long.value;
+
+    if (userLat == null || userLng == null) {
+      for (final d in donors) {
+        d.distanceKm = null;
+      }
+      return;
+    }
+
+    for (final d in donors) {
+      if (d.latitude != null && d.longitude != null) {
+        d.distanceKm = _haversineKm(
+          userLat,
+          userLng,
+          d.latitude!,
+          d.longitude!,
+        );
+      } else {
+        d.distanceKm = null;
+      }
+    }
+
+    donors.sort((a, b) {
+      if (a.distanceKm == null && b.distanceKm == null) return 0;
+      if (a.distanceKm == null) return 1; // unknown distance goes last
+      if (b.distanceKm == null) return -1;
+      return a.distanceKm!.compareTo(b.distanceKm!); // ascending
+    });
+  }
+
+  /// Great-circle distance between two lat/lng points, in kilometers.
+  double _haversineKm(double lat1, double lon1, double lat2, double lon2) {
+    const earthRadiusKm = 6371.0;
+    final dLat = _degToRad(lat2 - lat1);
+    final dLon = _degToRad(lon2 - lon1);
+
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(_degToRad(lat1)) *
+            cos(_degToRad(lat2)) *
+            sin(dLon / 2) *
+            sin(dLon / 2);
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+    return earthRadiusKm * c;
+  }
+
+  double _degToRad(double deg) => deg * (pi / 180);
 
   void changeTab(int index) {
     currentTabIndex.value = index;
